@@ -72,16 +72,6 @@ insert_into_column([H|T], Colour, [H|R]) :- insert_into_column(T, Colour, R).
 update_board([H|T], 1, C, [C|T]).
 update_board([H|T], N, C, [H|R]) :- N2 is N-1, update_board(T, N2, C, R).
 
-% Insert a piece in the column by the machine.
-% TODO
-:- use_module(library(random)). % temporary only
-% picks a column at random
-machine_moves(Board, Board1) :-
-    random(1,8,N),
-	valid_move(Board, N),
-	insert_into_board(Board, o, N, Board1).
-machine_moves(Board, Board1) :- machine_moves(Board,Board1). % tries again until it works.
-
 % Explain how to play the game, and display the empty board.
 explain_rules :-
     write('Welcome to Connect 4!'),
@@ -159,3 +149,102 @@ diagonal_left_win(Board, Player) :-
 full(Board) :-
     \+ (append(_, [Column|_], Board),
         append(_, [-|_], Column)).
+
+%
+%/ Machine selects a move using the Negamax algorithm
+%
+% Insert a piece in the column by the machine.
+% TODO
+:- use_module(library(random)). % temporary only
+% picks a column at random
+machine_moves(Board, Board) :- win(Board, x).
+machine_moves(Board, Board1) :-
+	best_move(Board, 4, o, Move),
+	insert_into_board(Board, o, Move, Board1).
+
+opponent(x,o).
+opponent(o,x).
+
+% calculates the best possible Move for Player given Board
+% Depth is the max depth to recursively search for possible moves
+best_move(Board, Depth, Player, Move) :-
+	best_score(Board, Player, Depth, 1, Score1),
+	best_score(Board, Player, Depth, 2, Score2),
+	best_score(Board, Player, Depth, 3, Score3),
+	best_score(Board, Player, Depth, 4, Score4),
+	best_score(Board, Player, Depth, 5, Score5),
+	best_score(Board, Player, Depth, 6, Score6),
+	best_score(Board, Player, Depth, 7, Score7),
+	select_best_move([Score1, Score2, Score3, Score4, Score5, Score6, Score7], Board, Move).
+
+
+% select the score that minimizes your opponents score (maximizes your score)	
+select_best_move(ScoreList, _, Move) :-
+	select_min_score(ScoreList, Score),
+	print(ScoreList),
+	nl,
+	nth1(Move, ScoreList, Score).
+
+
+% calculates the best possible score if the player chooses column N.
+best_score(_,_,0,_,-42).
+best_score(Board,_,_,_,0) :- full(Board).
+best_score(Board, Player, Depth, N, -42) :- \+ valid_move(Board, N).
+best_score(Board,o,_,_,Score) :- 
+	can_win(Board, o),
+	board_moves_left(Board,NM),
+	Score is -1*((NM + 1)//2). 			  		  % Your score is the number of moves
+												  %	before the board would be full at the time when you win.
+best_score(Board,x,_,_,Score) :- 
+	can_win(Board, x),
+	board_moves_left(Board,NM),
+	Score is -1*((NM + 1)//2). 			  		  % Your score is the number of moves
+												  %	before the board would be full at the time when you win.												  
+
+best_score(Board, Player, Depth, N, Score) :-
+	valid_move(Board,N),
+	insert_into_board(Board, Player, N, Board1),
+	opponent(Player, P2),
+	D2 is Depth - 1,
+	best_score(Board1, P2, D2, 1, OS1),
+	best_score(Board1, P2, D2, 2, OS2),
+	best_score(Board1, P2, D2, 3, OS3),
+	best_score(Board1, P2, D2, 4, OS4),
+	best_score(Board1, P2, D2, 5, OS5),
+	best_score(Board1, P2, D2, 6, OS6),
+	best_score(Board1, P2, D2, 7, OS7),
+	select_max_score([OS1,OS2,OS3,OS4,OS5,OS6,OS7], Score).
+
+	
+% Select the minimum score from a list
+select_min_score([], 42).
+select_min_score([H|T], Min) :- 
+	select_min_score(T, M2),
+	Min is min(H,M2).
+	
+% Select the max score from a list of scores
+select_max_score([], -42).
+select_max_score([H|T], Max) :- 
+	select_max_score(T, M2),
+	Max is max(H,M2).
+
+% Get the number of moves until the board is full
+board_moves_left([], 0).
+board_moves_left([H|T], Moves) :-
+	col_moves_left(H, M1),
+	board_moves_left(T, M2),
+	Moves is M1 + M2.
+	
+col_moves_left([], 0).
+col_moves_left([X|T], 0) :- dif(X,'-').
+col_moves_left(['-'|T], M) :-
+	col_moves_left(T, M1),
+	M is M1 + 1.
+	
+can_win(Board,Player) :- valid_move(Board, 1), insert_into_board(Board,Player,1,Board1), win(Board1, Player).
+can_win(Board,Player) :- valid_move(Board, 2), insert_into_board(Board,Player,2,Board1), win(Board1, Player).
+can_win(Board,Player) :- valid_move(Board, 3), insert_into_board(Board,Player,3,Board1), win(Board1, Player).
+can_win(Board,Player) :- valid_move(Board, 4), insert_into_board(Board,Player,4,Board1), win(Board1, Player).
+can_win(Board,Player) :- valid_move(Board, 5), insert_into_board(Board,Player,5,Board1), win(Board1, Player).
+can_win(Board,Player) :- valid_move(Board, 6), insert_into_board(Board,Player,6,Board1), win(Board1, Player).
+can_win(Board,Player) :- valid_move(Board, 7), insert_into_board(Board,Player,7,Board1), win(Board1, Player).

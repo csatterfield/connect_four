@@ -178,8 +178,6 @@ best_move(Board, Depth, Player, Move) :-
 % select_best_move(ScoreList, Move) selects the score that minimizes your opponents score (maximizes your score)
 select_best_move(ScoreList, Move) :-
 	select_max_score(ScoreList, MaxScore),
-	print(ScoreList),
-	nl,
 	find_index(Move, ScoreList, MaxScore).
 	
 % Finds the index of a value occuring in a list. If more than one value is found, one is chosen at random.

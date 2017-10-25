@@ -1,2 +1,2 @@
 # connect_four
-A command line based implementation of the game xonnect four, with a simple AI. 
+A command line based implementation of the game connect four, with a simple AI. 

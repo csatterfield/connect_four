@@ -177,19 +177,31 @@ best_move(Board, Depth, Player, Move) :-
 
 % select_best_move(ScoreList, Move) selects the score that minimizes your opponents score (maximizes your score)
 select_best_move(ScoreList, Move) :-
-	select_min_score(ScoreList, MinScore),
+	select_max_score(ScoreList, MaxScore),
 	print(ScoreList),
 	nl,
-	nth1(Move, ScoreList, MinScore).
+	find_index(Move, ScoreList, MaxScore).
+	
+% Finds the index of a value occuring in a list. If more than one value is found, one is chosen at random.
+find_index(Index, List, Value) :-
+    findall(N, nth1(N, List, Value), Indexes),
+	length(Indexes, L),
+	Bound is L + 1,
+	random(1,Bound,Rindex),
+	nth1(Rindex, Indexes, I),
+	Index is I.
 
+	
+	
 % best_score(Board, Player, Depth, N, Score) calculates the best possible score if the player chooses column N.
-best_score(_,_,0,_,-42). % stop when depth = 0
+best_score(_,_,0,_,0). % stop when depth = 0
 best_score(Board,_,_,_,0) :- full(Board).
 best_score(Board, Player, Depth, N, -42) :- \+ valid_move(Board, N).
-best_score(Board, Player, _, _, Score) :-
-  can_win(Board, Player),
+best_score(Board, Player, _, Column, Score) :-
+  can_win(Board, Player, Column),
   board_moves_left(Board, NM),
-  Score is ((42 - NM)//2).
+  Score is ((NM - 1)//2).
+  
 best_score(Board, Player, Depth, N, Score) :- %
 	valid_move(Board,N),
 	insert_into_board(Board, Player, N, Board1),
@@ -202,7 +214,8 @@ best_score(Board, Player, Depth, N, Score) :- %
   best_score(Board1, P2, D2, 5, OS5),
   best_score(Board1, P2, D2, 6, OS6),
   best_score(Board1, P2, D2, 7, OS7),
-  select_max_score([OS1,OS2,OS3,OS4,OS5,OS6,OS7], Score).
+  select_max_score([OS1,OS2,OS3,OS4,OS5,OS6,OS7], OSMax),
+  Score is -1 * OSMax.
 
 % Select the minimum score from a list
 select_min_score([], 42).
@@ -233,10 +246,4 @@ col_moves_left(['-'|T], M) :-
 	M is M1 + 1.
 
 % can_win(Board, Player) is true if Player can win the game with one move.
-can_win(Board,Player) :- valid_move(Board, 1), insert_into_board(Board,Player,1,Board1), win(Board1, Player).
-can_win(Board,Player) :- valid_move(Board, 2), insert_into_board(Board,Player,2,Board1), win(Board1, Player).
-can_win(Board,Player) :- valid_move(Board, 3), insert_into_board(Board,Player,3,Board1), win(Board1, Player).
-can_win(Board,Player) :- valid_move(Board, 4), insert_into_board(Board,Player,4,Board1), win(Board1, Player).
-can_win(Board,Player) :- valid_move(Board, 5), insert_into_board(Board,Player,5,Board1), win(Board1, Player).
-can_win(Board,Player) :- valid_move(Board, 6), insert_into_board(Board,Player,6,Board1), win(Board1, Player).
-can_win(Board,Player) :- valid_move(Board, 7), insert_into_board(Board,Player,7,Board1), win(Board1, Player).
+can_win(Board, Player, Column) :- valid_move(Board, Column), insert_into_board(Board,Player,Column,Board1), win(Board1, Player).

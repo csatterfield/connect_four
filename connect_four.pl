@@ -245,5 +245,5 @@ col_moves_left(['-'|T], M) :-
 	col_moves_left(T, M1),
 	M is M1 + 1.
 
-% can_win(Board, Player) is true if Player can win the game with one move.
+% can_win(Board, Player, Column) is true if Player can win the game by putting a piece in Column.
 can_win(Board, Player, Column) :- valid_move(Board, Column), insert_into_board(Board,Player,Column,Board1), win(Board1, Player).
